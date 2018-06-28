@@ -459,79 +459,35 @@ WHERE P.TEAM_ID like(SELECT TEAM_ID
                      WHERE TEAM_NAME LIKE '시티즌')
     AND p.position like 'MF';
         
+    
+    
 -- SOCCER_SQL_020
 -- 2012년 월별 경기수를 구하시오
 SELECT 
-    COUNT(SCHE_DATE) "3월",
-    COUNT(SCHE_DATE) "4월"
-FROM SCHEDULE K3
-WHERE SUBSTR(SCHE_DATE,1,6) LIKE '201203'
+    COUNT(k3.SCHE_DATE) "3월",
+    COUNT(k4.SCHE_DATE) "4월"
+FROM SCHEDULE K3, SCHEDULE K4
+WHERE SUBSTR(k3.SCHE_DATE,1,6) LIKE '201203'
+-- or SUBSTR(k4.SCHE_DATE,1,6) LIKE '201204'
 ;
+
+-- 021
+-- 2012년 월별 진행된 경기수(GUBUN IS YES)를 구하시오
+-- 출력은 1월:20경기 이런식으로...
+
+
+
+
+
+-- 022
+-- 2012년 9월 14일에 벌어질 경기는 어디와 어디입니까
+-- 홈팀: ?   원정팀: ? 로 출력
+
+
+
+---------------------------------------------------------------------------------
 
 SELECT * FROM SCHEDULE ORDER BY SCHE_DATE;
 SELECT * FROM PLAYER;
 SELECT * FROM TEAM;
 SELECT * FROM STADIUM;
-
-SELECT 
-    t.TEAM_NAME 팀명,
-    p.PLAYER_NAME 선수명,
-    p.POSITION 포지션,
-    p.BACK_NO 백넘버,
-    p.HEIGHT 키
-FROM 
-    (SELECT team_id, team_name
-     FROM TEAM 
-     WHERE TEAM_NAME 
-        IN('삼성블루윙즈','드래곤즈')) t, player p
-WHERE t.team_id like p.team_id
-; 
-    
-
----------------------------------------------------------------------------------
-SELECT * FROM SCHEDULE;
-SELECT * FROM PLAYER;
-SELECT * FROM TEAM;
-SELECT * FROM STADIUM;
-
-
-
-
-
-
-
-
-
-SELECT t.team_name, p.player_name
-FROM team t, player p
-WHERE t.team_id=p.team_id 
-    AND position IS NULL
-ORDER BY t.team_name, p.player_name;
-
-
-SELECT t.team_name 홈팀, s.stadium_name 경기장, s.SEAT_COUNT||'명' 최대관중
-FROM team t, stadium s 
-WHERE s.hometeam_id=t.team_id
-    AND t.ddd like '02%'
-ORDER BY t.team_name;
-
-
-SELECT * FROM SCHEDULE;
-SELECT * FROM PLAYER;
-SELECT * FROM TEAM;
-SELECT * FROM STADIUM;
-SELECT * FROM SCHEDULE ORDER BY SCHE_DATE,HOMETEAM_ID;
-    
-
-
-SELECT S.SCHE_DATE, T.TEAM_NAME,S.HOMETEAM_ID, S.HOME_SCORE
-FROM SCHEDULE S
-    FULL JOIN TEAM T
-    ON S.HOMETEAM_ID LIKE T.TEAM_ID
-ORDER BY S.SCHE_DATE,HOMETEAM_ID;
-
-SELECT S.SCHE_DATE, T.TEAM_NAME,S.AWAYTEAM_ID,S.AWAY_SCORE
-FROM SCHEDULE S
-    JOIN TEAM T
-        ON S.AWAYTEAM_ID LIKE T.TEAM_ID
-ORDER BY S.SCHE_DATE,HOMETEAM_ID;
