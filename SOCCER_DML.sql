@@ -440,7 +440,10 @@ WHERE
 
 -- SOCCER_SQL_018
 -- 최호진 선수의 소속팀과 포지션, 백넘버는 무엇입니까
-SELECT t.TEAM_NAME 팀명,p.PLAYER_NAME 이름, p.BACK_NO 백넘버
+SELECT 
+    t.TEAM_NAME 팀명,
+    p.PLAYER_NAME 이름, 
+    p.BACK_NO 백넘버
 FROM player p
     JOIN team t
         on p.team_id like t.team_id
@@ -454,40 +457,316 @@ SELECT ROUND(AVG(P.HEIGHT),2) 평균키
 FROM PLAYER P
     JOIN TEAM T
         ON P.TEAM_ID LIKE T.TEAM_ID
-WHERE P.TEAM_ID like(SELECT TEAM_ID
-                     FROM TEAM
-                     WHERE TEAM_NAME LIKE '시티즌')
-    AND p.position like 'MF';
+WHERE T.TEAM_NAME LIKE '시티즌'
+    AND p.position like 'MF'
+;
         
     
     
 -- SOCCER_SQL_020
+-- 2012년 3월 경기수를 구하시오
 -- 2012년 월별 경기수를 구하시오
-SELECT 
-    COUNT(k3.SCHE_DATE) "3월",
-    COUNT(k4.SCHE_DATE) "4월"
-FROM SCHEDULE K3, SCHEDULE K4
-WHERE SUBSTR(k3.SCHE_DATE,1,6) LIKE '201203'
--- or SUBSTR(k4.SCHE_DATE,1,6) LIKE '201204'
+
+SELECT COUNT(*) "3월"
+FROM SCHEDULE
+WHERE SCHE_DATE LIKE '201203%'
 ;
+
+
+SELECT 
+        (SELECT COUNT(*) 
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201201%') "1월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201202%') "2월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201203%') "3월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201204%') "4월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201205%') "5월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201206%') "6월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201207%') "7월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201208%') "8월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201209%') "9월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201210%') "10월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201211%') "11월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201212%') "12월"
+FROM DUAL -- 키워드 가상테이블
+;
+
+
+
 
 -- 021
 -- 2012년 월별 진행된 경기수(GUBUN IS YES)를 구하시오
 -- 출력은 1월:20경기 이런식으로...
 
 
-
+SELECT  DISTINCT
+        (SELECT COUNT(*) 
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201201%'
+              AND GUBUN LIKE 'Y') "1월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201202%'
+              AND GUBUN LIKE 'Y') "2월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201203%'
+              AND GUBUN LIKE 'Y') "3월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201204%'
+             AND GUBUN LIKE 'Y') "4월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201205%'
+              AND GUBUN LIKE 'Y') "5월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201206%'
+              AND GUBUN LIKE 'Y') "6월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201207%'
+              AND GUBUN LIKE 'Y') "7월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201208%'
+              AND GUBUN LIKE 'Y') "8월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201209%'
+              AND GUBUN LIKE 'Y') "9월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201210%'
+              AND GUBUN LIKE 'Y') "10월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201211%'
+              AND GUBUN LIKE 'Y') "11월",
+        (SELECT COUNT(*)
+        FROM SCHEDULE
+        WHERE SCHE_DATE LIKE '201212%'
+             AND GUBUN LIKE 'Y') "12월"
+FROM DUAL
+; 
 
 
 -- 022
 -- 2012년 9월 14일에 벌어질 경기는 어디와 어디입니까
 -- 홈팀: ?   원정팀: ? 로 출력
+SELECT '홈팀 : ' || T1.REGION_NAME ||' '||T1.TEAM_NAME 홈팀,
+       '원정팀 : ' || T2.REGION_NAME ||' '||T2.TEAM_NAME 원정팀
+FROM SCHEDULE K
+    JOIN TEAM T1
+        ON K.HOMETEAM_ID LIKE T1.TEAM_ID 
+    JOIN TEAM T2
+        ON K.AWAYTEAM_ID LIKE T2.TEAM_ID 
+WHERE K.SCHE_DATE LIKE '20120914';
 
 
+
+
+-- 023
+-- GROUP BY 사용
+-- 팀별 선수의 수
+-- 아이파크 20명
+SELECT  (SELECT
+        TEAM_NAME
+        FROM TEAM
+        WHERE TEAM_ID LIKE T.TEAM_ID) 팀명, COUNT(P.PLAYER_ID)||'명' 선수인원 
+FROM TEAM T
+    JOIN PLAYER P
+        ON T.TEAM_ID LIKE P.TEAM_ID
+GROUP BY T.TEAM_ID
+ORDER BY T.TEAM_ID
+;
+
+SELECT  T.TEAM_NAME 팀명, COUNT(P.PLAYER_ID)||'명' 선수인원 
+FROM TEAM T
+    JOIN PLAYER P
+        ON T.TEAM_ID LIKE P.TEAM_ID
+GROUP BY T.TEAM_NAME
+ORDER BY T.TEAM_NAME
+;
+
+
+
+-- 024
+-- 팀별 골기퍼의 평균키
+-- 아이파크 180CM
+
+SELECT T.TEAM_NAME 팀명, AVG(P.HEIGHT)||'CM' 평균키
+FROM TEAM T
+    JOIN PLAYER P
+        ON T.TEAM_ID LIKE P.TEAM_ID
+WHERE P.POSITION LIKE 'GK'
+GROUP BY T.TEAM_NAME
+ORDER BY T.TEAM_NAME
+;
 
 ---------------------------------------------------------------------------------
 
 SELECT * FROM SCHEDULE ORDER BY SCHE_DATE;
-SELECT * FROM PLAYER;
+SELECT * FROM PLAYER ORDER BY TEAM_ID;
 SELECT * FROM TEAM;
 SELECT * FROM STADIUM;
+
+
+CREATE TABLE TEAMZ(
+    TEAM_ID VARCHAR2(20) PRIMARY KEY,
+    TEAM_NAME VARCHAR2(20)  
+);
+
+CREATE TABLE TEAMW(
+    MEM_ID VARCHAR2(20) PRIMARY KEY,
+    TEAM_ID VARCHAR2(20),
+    MEM_NAME VARCHAR2(20),
+    MEM_AGE DECIMAL,
+    ROLL VARCHAR2(20)); --팀장, 회원담당,아이템담당,게시판담당,관리자담당
+    
+--ALTER TABLE TEAMW ADD 
+--CONSTRAINT TEAMW_TEAM_ID
+--FOREIGN KEY(TEAM_ID) REFERENCES TEAMZ (TEAM_ID)
+;
+
+INSERT INTO TEAMZ(TEAM_ID,TEAM_NAME) VALUES('저스티스','ATEAM');
+INSERT INTO TEAMZ(TEAM_ID,TEAM_NAME) VALUES('엘카로','HTEAM');
+INSERT INTO TEAMZ(TEAM_ID,TEAM_NAME) VALUES('가오갤','CTEAM');
+INSERT INTO TEAMZ(TEAM_ID,TEAM_NAME) VALUES('어벤저스','STEAM');
+
+ALTER TABLE TEAMW ADD CONSTRAINT TEAM_fk_TEAM_ID
+FOREIGN KEY (TEAM_ID) REFERENCES TEAMZ(TEAM_ID);
+
+
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('저스티스1','ATEAM','형준','34');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('저스티스2','ATEAM','세인','35');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('저스티스3','ATEAM','희태','21');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('저스티스4','ATEAM','상훈','29');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('저스티스5','ATEAM','태형','25');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('엘카로1','HTEAM','혜리','26');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('엘카로2','HTEAM','지은','26');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('엘카로3','HTEAM','준','27');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('엘카로4','HTEAM','재경','30');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('엘카로5','HTEAM','단아','26');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('가오갤1','CTEAM','최정훈','32');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('가오갤2','CTEAM','윤호','31');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('가오갤3','CTEAM','가은','29');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('가오갤4','CTEAM','정훈','23');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('가오갤5','CTEAM','승태','30');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('어벤져스1','STEAM','승호','27');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('어벤져스2','STEAM','소진','26');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('어벤져스3','STEAM','이슬','29');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('어벤져스4','STEAM','진태','26');
+INSERT INTO TEAMW 
+(MEM_ID,TEAM_ID,MEM_NAME,MEM_AGE) 
+VALUES('어벤져스5','STEAM','누리','30');
+
+
+UPDATE TEAMW SET MEM_NAME='태형'
+WHERE MEM_NAME LIKE '태영';
+
+SELECT * FROM TEAMZ;
+SELECT * FROM TEAMW;
+
+DROP TABLE TEAMZ;
+DROP TABLE TEAMW;
+
+---------------------------------------------------------------------------------
+
+SELECT 
+    TEAM_ID 팀, 
+    COUNT(MEM_NAME) 명수, 
+    SUM(MEM_AGE) 나이합,
+    MAX(MEM_AGE) 나이최대치,
+    MIN(MEM_AGE) 나이최소치,
+    AVG(MEM_AGE) 나이평균
+FROM TEAMW
+GROUP BY TEAM_ID
+ORDER BY AVG(MEM_AGE) DESC;
+
+
+SELECT 
+    (SELECT Z2.TEAM_NAME
+    FROM TEAMZ Z2
+    WHERE Z2.TEAM_ID LIKE Z1.TEAM_ID) 팀명, 
+    COUNT(W.MEM_NAME) 명수, 
+    SUM(W.MEM_AGE) 나이합,
+    MAX(W.MEM_AGE) 나이최대치,
+    MIN(W.MEM_AGE) 나이최소치,
+    AVG(W.MEM_AGE) 나이평균
+FROM TEAMW W
+    JOIN TEAMZ Z1
+        ON W.TEAM_ID LIKE Z1.TEAM_ID
+GROUP BY Z1.TEAM_ID;
+
+select
+   (select tz2.team_name
+    from teamz tz2
+    where tz2.team_id like tz.team_id) 팀명,
+    count(*) 팀원수, sum(tw.mem_age) 나이합, max(tw.mem_age) 나이최대치,
+    min(tw.mem_age) 나이최소치, avg(tw.mem_age) 나이평균
+from teamz tz
+   join teamw tw
+       on tz.team_id like tw.team_id
+group by tz.team_id;
