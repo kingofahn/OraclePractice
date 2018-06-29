@@ -1,4 +1,4 @@
-﻿/* Formatted on 2018/06/28 오후 5:48:29 (QP5 v5.326) */
+﻿/* Formatted on 2018/06/29 오후 2:20:18 (QP5 v5.326) */
 --SQL_TEST_001
 
 SELECT COUNT (*) "테이블의 수" FROM tab;
@@ -440,8 +440,6 @@ SELECT (SELECT COUNT (*)
            "12월"
   FROM DUAL                                                       -- 키워드 가상테이블
 ;
-
-
 -- 021
 -- 2012년 월별 진행된 경기수(GUBUN IS YES)를 구하시오
 -- 출력은 1월:20경기 이런식으로...
@@ -566,6 +564,258 @@ SELECT PLAYER_NAME
        END
            포지션
   FROM PLAYER
- WHERE TEAM_ID = 'K08';
- 
- DESC TEAMW;
+ WHERE TEAM_ID LIKE
+           (SELECT TEAM_ID
+              FROM TEAM
+             WHERE TEAM_NAME LIKE '아이파크');
+
+
+
+-- 025
+-- 삼성 블루윙즈에서 키순으로 탑 11부터 20위 출력
+
+SELECT ROWNUM "NO.", A.*
+  FROM (  SELECT T.TEAM_NAME       팀명,
+                 P.PLAYER_NAME     선수명,
+                 P.POSITION        포지션,
+                 P.BACK_NO         백넘버,
+                 P.HEIGHT          키
+            FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+           WHERE P.TEAM_ID LIKE
+                     (SELECT TEAM_ID
+                        FROM TEAM
+                       WHERE     TEAM_NAME LIKE '삼성블루윙즈'
+                             AND P.HEIGHT IS NOT NULL)
+        ORDER BY P.HEIGHT DESC) A;
+
+SELECT ROWNUM, A.*
+  FROM (  SELECT T.TEAM_NAME       팀명,
+                 P.PLAYER_NAME     선수명,
+                 P.POSITION        포지션,
+                 P.BACK_NO         백넘버,
+                 P.HEIGHT          키
+            FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+           WHERE P.TEAM_ID LIKE
+                     (SELECT TEAM_ID
+                        FROM TEAM
+                       WHERE     TEAM_NAME LIKE '삼성블루윙즈'
+                             AND P.HEIGHT IS NOT NULL)
+        ORDER BY P.HEIGHT DESC) A
+ WHERE ROWNUM <= 10;
+
+
+SELECT B.*
+  FROM (SELECT ROWNUM RNUM, A.*
+          FROM (  SELECT P.PLAYER_NAME     선수명,
+                         P.POSITION        포지션,
+                         P.BACK_NO         백넘버,
+                         P.HEIGHT          키
+                    FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+                   WHERE P.TEAM_ID LIKE
+                             (SELECT TEAM_ID
+                                FROM TEAM
+                               WHERE     TEAM_NAME LIKE '삼성블루윙즈'
+                                     AND P.HEIGHT IS NOT NULL)
+                ORDER BY P.HEIGHT DESC) A) B
+ WHERE B.RNUM BETWEEN 11 AND 20;
+
+
+-- 026
+-- 팀별 골키퍼의 평균 키에서
+-- 가장 평균키가 큰 팀명은
+
+
+
+  SELECT (SELECT TEAM_NAME
+            FROM TEAM
+           WHERE TEAM_ID LIKE T.TEAM_ID)
+             팀명,
+         ROUND (AVG (P.HEIGHT), 2)
+             키
+    FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+GROUP BY T.TEAM_ID
+ORDER BY 키 DESC;
+
+
+SELECT ROWNUM R, A.*
+  FROM (  SELECT (SELECT TEAM_NAME
+                    FROM TEAM
+                   WHERE TEAM_ID LIKE T.TEAM_ID)
+                     팀명,
+                 ROUND (AVG (P.HEIGHT), 2)
+                     키
+            FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+           WHERE P.POSITION LIKE 'GK'
+        GROUP BY T.TEAM_ID
+        ORDER BY 키 DESC) A
+ WHERE ROWNUM = 1;
+
+;
+
+-- 027
+-- 각 구단별 선수들 평균키가 삼성블루윙즈팀의
+-- 평균키보다 작은 팀의 이름과 해당 팀의 평균키를
+-- 구하시오
+
+-- 전체팀 평균
+
+  SELECT (SELECT TEAM_NAME
+            FROM TEAM
+           WHERE TEAM_ID LIKE T.TEAM_ID)
+             팀명,
+         ROUND (AVG (P.HEIGHT), 2)
+             키
+    FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+   WHERE P.HEIGHT IS NOT NULL
+GROUP BY T.TEAM_ID;
+
+-- 삼성 평균
+
+  SELECT (SELECT TEAM_NAME
+            FROM TEAM
+           WHERE TEAM_ID LIKE T.TEAM_ID)
+             팀명,
+         ROUND (AVG (P.HEIGHT), 2)
+             키
+    FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+GROUP BY T.TEAM_ID
+  HAVING T.TEAM_ID LIKE
+             (SELECT TEAM_ID
+                FROM TEAM
+               WHERE TEAM_NAME LIKE '삼성블루윙즈');
+
+
+SELECT A.팀명, A.키
+  FROM (  SELECT (SELECT TEAM_NAME
+                    FROM TEAM
+                   WHERE TEAM_ID LIKE T.TEAM_ID)
+                     팀명,
+                 ROUND (AVG (P.HEIGHT), 2)
+                     키
+            FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+           WHERE P.HEIGHT IS NOT NULL
+        GROUP BY T.TEAM_ID) A,
+       (  SELECT (SELECT TEAM_NAME
+                    FROM TEAM
+                   WHERE TEAM_ID LIKE T.TEAM_ID)
+                     팀명,
+                 ROUND (AVG (P.HEIGHT), 2)
+                     키
+            FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+        GROUP BY T.TEAM_ID
+          HAVING T.TEAM_ID LIKE
+                     (SELECT TEAM_ID
+                        FROM TEAM
+                       WHERE TEAM_NAME LIKE '삼성블루윙즈')) B
+ WHERE A.키 < B.키;
+
+
+-- 028
+-- 2012년 경기 중에서 점수차가 가장 큰 경기
+-- 날짜 일화천마 유나이티드 몇점차
+
+
+
+  SELECT K.SCHE_DATE                       날짜,
+         HT.TEAM_NAME                      홈팀,
+         AT.TEAM_NAME                      상대팀,
+         (K.HOME_SCORE - K.AWAY_SCORE)     점수차
+    FROM SCHEDULE K
+         JOIN TEAM HT ON K.HOMETEAM_ID LIKE HT.TEAM_ID
+         JOIN TEAM AT ON K.AWAYTEAM_ID LIKE AT.TEAM_ID
+   WHERE (K.HOME_SCORE - K.AWAY_SCORE) IS NOT NULL
+ORDER BY 점수차 DESC;
+
+SELECT ROWNUM     NO,
+       A.날짜,
+       A.홈팀,
+       A.어웨이팀,
+       A.점수차
+  FROM (  SELECT K.SCHE_DATE                       날짜,
+                 HT.TEAM_NAME                      홈팀,
+                 AT.TEAM_NAME                      어웨이팀,
+                 (K.HOME_SCORE - K.AWAY_SCORE)     점수차
+            FROM SCHEDULE K
+                 JOIN TEAM HT ON K.HOMETEAM_ID LIKE HT.TEAM_ID
+                 JOIN TEAM AT ON K.AWAYTEAM_ID LIKE AT.TEAM_ID
+           WHERE (K.HOME_SCORE - K.AWAY_SCORE) IS NOT NULL
+        ORDER BY 점수차 DESC) A
+ WHERE ROWNUM LIKE 1;
+
+
+
+SELECT * FROM TEAM;
+
+SELECT * FROM PLAYER;
+
+SELECT * FROM SCHEDULE;
+
+SELECT * FROM STADIUM;
+
+-- 029
+-- 좌석수대로 스타디움 순서 매기기
+-- 스타디움 전체
+
+  SELECT S.STADIUM_NAME 경기장, S.SEAT_COUNT 좌석수
+    FROM STADIUM S
+ORDER BY S.SEAT_COUNT DESC;
+
+SELECT ROWNUM NO, A.경기장, A.좌석수
+  FROM (  SELECT S.STADIUM_NAME 경기장, S.SEAT_COUNT 좌석수
+            FROM STADIUM S
+        ORDER BY S.SEAT_COUNT DESC) A;
+
+-- 030
+-- 2012년 구단 승리 순으로 순위매기기
+
+SELECT * FROM TEAM;
+
+SELECT *
+  FROM PLAYER
+ WHERE TEAM_ID LIKE 'K14';
+
+SELECT * FROM SCHEDULE;
+
+SELECT * FROM STADIUM;
+
+-- 스케쥴 전체 --
+
+--홈팀  승리
+  SELECT (SELECT TEAM_NAME
+          FROM TEAM
+          WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (K.HOME_SCORE - AWAY_SCORE) 승리
+    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0
+GROUP BY T.TEAM_ID
+ORDER BY 승리 DESC
+;
+--어웨팀팀  승리
+  SELECT (SELECT TEAM_NAME
+            FROM TEAM
+            WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (K.AWAY_SCORE - K.HOME_SCORE) 승리
+    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+   WHERE (K.AWAY_SCORE - K.HOME_SCORE) > 0
+GROUP BY T.TEAM_ID
+ORDER BY 승리 DESC
+;
+
+--합치기
+SELECT (SELECT TEAM_NAME
+          FROM TEAM
+          WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (*) 승리
+    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0 OR (K.AWAY_SCORE - K.HOME_SCORE) > 0
+GROUP BY T.TEAM_ID
+ORDER BY 승리 DESC
+;
+
+--합치기 정렬
+SELECT ROWNUM NO, A.*
+FROM (SELECT (SELECT TEAM_NAME
+          FROM TEAM
+          WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (*) 승리
+    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0 OR (K.AWAY_SCORE - K.HOME_SCORE) > 0
+GROUP BY T.TEAM_ID
+ORDER BY 승리 DESC)A
+;

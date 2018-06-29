@@ -1,13 +1,8 @@
 /* Formatted on 2018/06/28 오후 7:11:33 (QP5 v5.326) */
 ---------------------------------------------------------------------------------
-
-
-
 --UPDATE TEAMW
 --SET MEM_NAME = '태형'
 --WHERE MEM_NAME LIKE '태영';
-
-
 
   SELECT Z1.TEAM_ID              팀,
          COUNT (Z1.MEM_NAME)     명수,
@@ -107,5 +102,5 @@ UPDATE TEAMW
 DROP TABLE TEAMW;
 DROP TABLE TEAMZ;
 
-
+DESC TEAMW;
 ---------------------------------------------------------------------------------
