@@ -1,4 +1,4 @@
-﻿/* Formatted on 2018/06/29 오후 2:20:18 (QP5 v5.326) */
+﻿/* Formatted on 2018-06-29 오후 5:02:39 (QP5 v5.326) */
 --SQL_TEST_001
 
 SELECT COUNT (*) "테이블의 수" FROM tab;
@@ -357,7 +357,9 @@ SELECT T.TEAM_NAME       팀명,
        P.POSITION        포지션,
        P.BACK_NO         백넘버,
        P.HEIGHT          키
-  FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+  FROM PLAYER P 
+    JOIN TEAM T 
+        ON P.TEAM_ID LIKE T.TEAM_ID
  WHERE T.TEAM_ID IN
            ((SELECT TEAM_ID
                FROM TEAM
@@ -624,8 +626,6 @@ SELECT B.*
 -- 팀별 골키퍼의 평균 키에서
 -- 가장 평균키가 큰 팀명은
 
-
-
   SELECT (SELECT TEAM_NAME
             FROM TEAM
            WHERE TEAM_ID LIKE T.TEAM_ID)
@@ -635,7 +635,6 @@ SELECT B.*
     FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
 GROUP BY T.TEAM_ID
 ORDER BY 키 DESC;
-
 
 SELECT ROWNUM R, A.*
   FROM (  SELECT (SELECT TEAM_NAME
@@ -684,8 +683,15 @@ GROUP BY T.TEAM_ID
                 FROM TEAM
                WHERE TEAM_NAME LIKE '삼성블루윙즈');
 
+-- 삼성블루윙즈팀의 평균키보다 작은 팀
 
-SELECT A.팀명, A.키
+
+-- 027
+-- 각 구단별 선수들 평균키가 삼성블루윙즈팀의
+-- 평균키보다 작은 팀의 이름과 해당 팀의 평균키를
+-- 구하시오
+
+SELECT ROWNUM NO, A.팀명, A.키
   FROM (  SELECT (SELECT TEAM_NAME
                     FROM TEAM
                    WHERE TEAM_ID LIKE T.TEAM_ID)
@@ -710,11 +716,25 @@ SELECT A.팀명, A.키
  WHERE A.키 < B.키;
 
 
+  SELECT (SELECT TB.TEAM_NAME
+            FROM TEAM TB
+           WHERE TB.TEAM_ID LIKE T.TEAM_ID)
+             팀명,
+         ROUND (AVG (P.HEIGHT), 2)
+             평균키
+    FROM PLAYER P JOIN TEAM T ON P.TEAM_ID LIKE T.TEAM_ID
+GROUP BY T.TEAM_ID
+  HAVING AVG (P.HEIGHT) <
+         (SELECT AVG (PA.HEIGHT)
+            FROM PLAYER PA JOIN TEAM TA ON PA.TEAM_ID LIKE TA.TEAM_ID
+           WHERE TA.TEAM_NAME LIKE '삼성블루윙즈');
+
 -- 028
 -- 2012년 경기 중에서 점수차가 가장 큰 경기
 -- 날짜 일화천마 유나이티드 몇점차
 
 
+-- 전체 -
 
   SELECT K.SCHE_DATE                       날짜,
          HT.TEAM_NAME                      홈팀,
@@ -726,11 +746,8 @@ SELECT A.팀명, A.키
    WHERE (K.HOME_SCORE - K.AWAY_SCORE) IS NOT NULL
 ORDER BY 점수차 DESC;
 
-SELECT ROWNUM     NO,
-       A.날짜,
-       A.홈팀,
-       A.어웨이팀,
-       A.점수차
+
+SELECT ROWNUM NO, A.*
   FROM (  SELECT K.SCHE_DATE                       날짜,
                  HT.TEAM_NAME                      홈팀,
                  AT.TEAM_NAME                      어웨이팀,
@@ -744,21 +761,32 @@ SELECT ROWNUM     NO,
 
 
 
-SELECT * FROM TEAM;
+-- 20120317, 일화천마 VS 유나이티드, 점수차
 
-SELECT * FROM PLAYER;
+SELECT A.*
+  FROM (  SELECT K.SCHE_DATE
+                     경기날짜,
+                 HT.TEAM_NAME || ' VS ' || AT.TEAM_NAME
+                     경기,
+                 CASE
+                     WHEN K.HOME_SCORE >= K.AWAY_SCORE
+                     THEN
+                         (K.HOME_SCORE - K.AWAY_SCORE)
+                     ELSE
+                         K.AWAY_SCORE - K.HOME_SCORE
+                 END
+                     점수차
+            FROM SCHEDULE K
+                 JOIN TEAM HT ON K.HOMETEAM_ID LIKE HT.TEAM_ID
+                 JOIN TEAM AT ON K.AWAYTEAM_ID LIKE AT.TEAM_ID
+           WHERE K.SCHE_DATE LIKE '2012%' AND K.GUBUN LIKE 'Y'
+        ORDER BY 점수차 DESC) A
+ WHERE ROWNUM LIKE 1;
 
-SELECT * FROM SCHEDULE;
-
-SELECT * FROM STADIUM;
 
 -- 029
 -- 좌석수대로 스타디움 순서 매기기
 -- 스타디움 전체
-
-  SELECT S.STADIUM_NAME 경기장, S.SEAT_COUNT 좌석수
-    FROM STADIUM S
-ORDER BY S.SEAT_COUNT DESC;
 
 SELECT ROWNUM NO, A.경기장, A.좌석수
   FROM (  SELECT S.STADIUM_NAME 경기장, S.SEAT_COUNT 좌석수
@@ -768,54 +796,112 @@ SELECT ROWNUM NO, A.경기장, A.좌석수
 -- 030
 -- 2012년 구단 승리 순으로 순위매기기
 
+
+
+--홈팀  승리
+
+  SELECT (SELECT TEAM_NAME
+            FROM TEAM
+           WHERE TEAM_ID LIKE T.TEAM_ID)
+             팀,
+         COUNT (K.HOME_SCORE - AWAY_SCORE)
+             승리
+    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0
+GROUP BY T.TEAM_ID
+ORDER BY 승리 DESC;
+
+--어웨팀팀  승리
+
+  SELECT (SELECT TEAM_NAME
+            FROM TEAM
+           WHERE TEAM_ID LIKE T.TEAM_ID)
+             팀,
+         COUNT (K.AWAY_SCORE - K.HOME_SCORE)
+             승리
+    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+   WHERE (K.AWAY_SCORE - K.HOME_SCORE) > 0
+GROUP BY T.TEAM_ID
+ORDER BY 승리 DESC;
+
+--합치기
+
+  SELECT (SELECT TEAM_NAME
+            FROM TEAM
+           WHERE TEAM_ID LIKE T.TEAM_ID)
+             팀,
+         COUNT (*)
+             승리
+    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0 OR (K.AWAY_SCORE - K.HOME_SCORE) > 0
+GROUP BY T.TEAM_ID
+ORDER BY 승리 DESC;
+
+--합치기후 ROWNUM해서 정렬
+
+SELECT ROWNUM NO, A.*
+  FROM (  SELECT (SELECT TEAM_NAME
+                    FROM TEAM
+                   WHERE TEAM_ID LIKE T.TEAM_ID)
+                     팀,
+                 COUNT (*)
+                     승리
+            FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
+           WHERE    (K.HOME_SCORE - K.AWAY_SCORE) > 0
+                 OR (K.AWAY_SCORE - K.HOME_SCORE) > 0
+        GROUP BY T.TEAM_ID
+        ORDER BY 승리 DESC) A;
+
+
+
+-- 030
+-- 2012년 구단 승리 순으로 순위매기기
+
+  SELECT A.TEAM_NAME 팀명, COUNT (A.SCORE) + COUNT (B.SCORE) 승수
+    FROM (SELECT SC.HOME_SCORE - SC.AWAY_SCORE     SCORE,
+                 HT.TEAM_ID                        TEAM_ID,
+                 HT.TEAM_NAME                      TEAM_NAME
+            FROM SCHEDULE SC
+                 JOIN TEAM HT ON HT.TEAM_ID LIKE SC.HOMETEAM_ID
+                 JOIN TEAM AT ON AT.TEAM_ID LIKE SC.AWAYTEAM_ID
+           WHERE     SC.HOME_SCORE - SC.AWAY_SCORE > 0
+                 AND SC.SCHE_DATE LIKE '2012%') A
+         JOIN
+         (SELECT SC1.AWAY_SCORE - SC1.HOME_SCORE     SCORE,
+                 AT1.TEAM_ID                         TEAM_ID,
+                 AT1.TEAM_NAME                       TEAM_NAME
+            FROM SCHEDULE SC1
+                 JOIN TEAM HT1 ON HT1.TEAM_ID LIKE SC1.HOMETEAM_ID
+                 JOIN TEAM AT1 ON AT1.TEAM_ID LIKE SC1.AWAYTEAM_ID
+           WHERE     SC1.AWAY_SCORE - SC1.HOME_SCORE > 0
+                 AND SC1.SCHE_DATE LIKE '2012%') B
+             ON A.TEAM_ID LIKE B.TEAM_ID
+GROUP BY A.TEAM_ID, A.TEAM_NAME
+ORDER BY COUNT (A.SCORE) DESC;
+
+
+
+  SELECT A.WINNER, COUNT (A.WINNER) 승리
+    FROM (SELECT K.SCHE_DATE
+                     경기날짜,
+                 CASE
+                     WHEN K.HOME_SCORE > K.AWAY_SCORE THEN HT.TEAM_NAME
+                     WHEN K.AWAY_SCORE > K.HOME_SCORE THEN AT.TEAM_NAME
+                     ELSE '무승부'
+                 END
+                     WINNER
+            FROM SCHEDULE K
+                 JOIN TEAM HT ON K.HOMETEAM_ID LIKE HT.TEAM_ID
+                 JOIN TEAM AT ON K.AWAYTEAM_ID LIKE AT.TEAM_ID
+           WHERE K.GUBUN LIKE 'Y' AND K.SCHE_DATE LIKE '2012%') A
+   WHERE A.WINNER NOT LIKE '무승부'
+GROUP BY A.WINNER
+ORDER BY 승리 DESC;
+
 SELECT * FROM TEAM;
 
-SELECT *
-  FROM PLAYER
- WHERE TEAM_ID LIKE 'K14';
+SELECT * FROM PLAYER;
 
 SELECT * FROM SCHEDULE;
 
 SELECT * FROM STADIUM;
-
--- 스케쥴 전체 --
-
---홈팀  승리
-  SELECT (SELECT TEAM_NAME
-          FROM TEAM
-          WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (K.HOME_SCORE - AWAY_SCORE) 승리
-    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
-   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0
-GROUP BY T.TEAM_ID
-ORDER BY 승리 DESC
-;
---어웨팀팀  승리
-  SELECT (SELECT TEAM_NAME
-            FROM TEAM
-            WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (K.AWAY_SCORE - K.HOME_SCORE) 승리
-    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
-   WHERE (K.AWAY_SCORE - K.HOME_SCORE) > 0
-GROUP BY T.TEAM_ID
-ORDER BY 승리 DESC
-;
-
---합치기
-SELECT (SELECT TEAM_NAME
-          FROM TEAM
-          WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (*) 승리
-    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
-   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0 OR (K.AWAY_SCORE - K.HOME_SCORE) > 0
-GROUP BY T.TEAM_ID
-ORDER BY 승리 DESC
-;
-
---합치기 정렬
-SELECT ROWNUM NO, A.*
-FROM (SELECT (SELECT TEAM_NAME
-          FROM TEAM
-          WHERE TEAM_ID LIKE T.TEAM_ID) 팀, COUNT (*) 승리
-    FROM SCHEDULE K JOIN TEAM T ON K.HOMETEAM_ID LIKE T.TEAM_ID
-   WHERE (K.HOME_SCORE - K.AWAY_SCORE) > 0 OR (K.AWAY_SCORE - K.HOME_SCORE) > 0
-GROUP BY T.TEAM_ID
-ORDER BY 승리 DESC)A
-;
