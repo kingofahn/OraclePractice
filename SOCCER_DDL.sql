@@ -1,9 +1,4 @@
-rem  DROP TABLES
-drop table PLAYER;
-drop table SCHEDULE;
-drop table TEAM;
-drop table STADIUM;
-rem  create TABLES
+
 CREATE TABLE STADIUM (
 STADIUM_ID    CHAR(3) NOT NULL,
 STADIUM_NAME  VARCHAR2(40) NOT NULL,
