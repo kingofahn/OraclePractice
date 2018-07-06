@@ -597,6 +597,7 @@ FROM(SELECT
      ORDER BY 점수차 DESC) A
 WHERE ROWNUM LIKE 1
 ;
+
 -- SOCCER_SQL_029
 -- 좌석수가 많은 대로 스타디움 순서 매기기
 -- 소진
